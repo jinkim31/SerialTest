@@ -2,7 +2,7 @@
 #include <ros/ros.h>
 #include <serial/serial.h>
 #include <thread>
-#include <vector>
+#include <queue>
 #include <mutex>
 
 using namespace std;
@@ -14,7 +14,7 @@ void run();
 Serial s;
 mutex m;
 bool serialRead = false;
-vector<uint8_t> readByte;
+queue<uint8_t> readByte;
 
 int main(int argc, char **argv)
 {
@@ -66,7 +66,7 @@ void serialReadThread()
                 s.read(readBuffer, size);   // 버퍼에 읽어옴
 
                 m.lock();   // producer consumer pattern. 뮤텍스 lock
-                for(int i=0; i<size; i++) readByte.push_back(readBuffer[i]);    // readByte에 하나씩 저장.
+                for(int i=0; i<size; i++) readByte.push(readBuffer[i]);    // readByte에 하나씩 저장.
                 m.unlock(); // 뮤텍스 unlock
             }
         }
@@ -97,9 +97,11 @@ void run()
         {
             // 한 바이트씩 프린트하고
             cout << "serial received:" << endl;
-            for (int i = 0; i < readByte.size(); i++) cout << (int) readByte[i] << endl;
-            // readByte를 clear
-            readByte.clear();
+            for (int i = 0; i < readByte.size(); i++)
+            {
+                cout << (int) readByte.front() << endl;
+                readByte.pop();
+            }
         }
         ros::spinOnce();
         loopRate.sleep();
