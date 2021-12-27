@@ -18,18 +18,21 @@ vector<uint8_t> readByte;
 
 int main(int argc, char **argv)
 {
+    // ros init
     ros::init(argc, argv, "comm");
     ros::start();
     ros::NodeHandle n;
 
+    // 포트, 보드레이트 설정
     s.setPort("/dev/ttyUSB0");
     s.setBaudrate(19200);
 
+    // 포트 존재하지 않거나 할 경우 대비한 예외처리
     try
     {
         s.open();
     }
-    catch (serial::IOException e)
+    catch (serial::IOException e)   // 퍼미션, 포트 없음 등으로 열수 없을 때 예외 출력하고 리턴
     {
         cerr << "Port open failed." <<e.what()<<endl;
         return false;
@@ -37,11 +40,12 @@ int main(int argc, char **argv)
 
     cout<<"port opened"<<endl;
 
+    // 수신 루프 정지를 위한 변수. true이면 계속 수신하다가 false가 되면 루프 종료
     serialRead = true;
     thread readThread(serialReadThread);
-    run();
-    serialRead = false;
-    readThread.join();
+    run();  // 메인 루프. ctrl+c 등으로 멈추면 리턴한다.
+    serialRead = false; // 스레드 join울 위해 false로
+    readThread.join();  // 수신 루프 종료 기다려 join
     return 0;
 }
 
